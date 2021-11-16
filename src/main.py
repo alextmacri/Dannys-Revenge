@@ -34,12 +34,12 @@ class emojis:
     CHEESE = '🧀'
 
 
-# function that clears the screen
-def clear():
-    os.system('cls' if os.name=='nt' else 'clear')
-
 # function that renders the game board (and a border) based on its render dictionary legend
-def render(board: list[list[int]]):
+def render(board: list[list[int]], update: bool=True):
+    # renders as an update by deleting what is already there
+    if update:
+        print('\033[0;0H')
+
     border_length = len(board[0]) + 2
     print(BOARD_RENDER_DICT[1] * border_length + styles.RESET)  # top border
     for row in board:
@@ -139,16 +139,37 @@ NUM_WALLS = 19
 NUM_ENEMIES = 3
 
 # variables to keep track of time with (1 = 1 second)
-enemy_move_start_time = 0
+enemy_move_start_time = time()
 ENEMY_MOVE_TIME_DIFFERENCE = 1
-enemy_spawn_start_time = 0
+enemy_spawn_start_time = time()
 ENEMY_SPAWN_TIME_DIFFERENCE = 180
+framerate_start_time = time()
+FRAMERATE = 1/60
 
 # generating a board
 board, empties, enemies, player = generate_board(WIDTH, HEIGHT, NUM_WALLS, NUM_ENEMIES)
 
 
-render(board)
-print(empties)
-print(enemies)
-print(player)
+# preparing the terminal for the game
+if os.name == 'nt':     # Windows support (untested as of yet). Largely "borrowed" from https://stackoverflow.com/questions/5174810/how-to-turn-off-blinking-cursor-in-command-window
+    import msvcrt
+    import ctypes
+    class _CursorInfo(ctypes.Structure):
+        _fields_ = [('size', ctypes.c_int), ('visible', ctypes.c_byte)]
+    ci = _CursorInfo()
+    handle = ctypes.windll.kernel32.GetStdHandle(-11)
+    ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+    ci.visible = False
+    ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+    os.system('cls')
+else:                   # Unix support (tested on Macos)
+    # removes cursor with unicode(?) and clears the terminal screen
+    print('\033[?25l')
+    os.system('clear')
+
+
+# the main game loop
+while True:
+    if time() - framerate_start_time > FRAMERATE:
+        framerate_start_time = time()
+        render(board)
