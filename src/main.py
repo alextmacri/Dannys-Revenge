@@ -169,7 +169,19 @@ else:                   # Unix support (tested on Macos)
 
 
 # the main game loop
-while True:
-    if time() - framerate_start_time > FRAMERATE:
-        framerate_start_time = time()
-        render(board)
+try:
+    while True:
+        if time() - framerate_start_time > FRAMERATE:
+            framerate_start_time = time()
+            render(board)
+
+# this stuff runs after exiting the program (we mess with the terminal a bit here, so we need to set it back to normal)
+except(KeyboardInterrupt):
+    if os.name == 'nt':
+        os.system('cls')
+        ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+        ci.visible = True
+        ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+    else:
+        os.system('clear')
+        print('\033[?25h')
